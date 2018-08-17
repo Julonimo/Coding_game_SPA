@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 let uri = 'mongodb://JuridicalPen:1492Mongo1492@ds121652.mlab.com:21652/spa';
 mongoose.connect(uri, { useNewUrlParser: true});
 const Schema = require('./Schema');
+const Mail = require('../controller/nodeMailer');
+const admin = 'julien.picard@mail.novancia.fr'; //tim@hellozack.fr
 const animals = [
 	'Chat',
 	'Chien',
@@ -45,14 +47,39 @@ function checkUserFields(req, res){
 
 exports.getAll = function(req,res) {
 	let result = new Promise(function(resolve, reject){
-		Schema.Alertes.find({}, function(err, data){
+		Schema.Alertes.find({}, function(err, result){
 			if(err){
 				console.log(err);
 				reject();
 			} else {
-				console.log("DATA", data);
-				resolve(res.status(200).send(data));
+				console.log("DATA", result);
+				resolve(res.status(200).send(result));
 			}
+		});
+	});
+}
+
+exports.update = function(req,res){
+	return new Promise(function(resolve, reject){
+		console.log("STATUS", req.body.alt.status);
+		console.log("BRIGADE", req.body.alt.brigade);
+		Schema.Alertes.findByIdAndUpdate(req.body.alt._id, {
+			brigade: req.body.alt.brigade,
+			status: req.body.alt.status
+		}, function(err, data){
+			if(err){ reject(err);}
+			console.log(data);
+			resolve(res.status(200).send(data));
+		});
+	});
+}
+
+exports.delete = function(req, res){
+	return new Promise(function(resolve, reject){
+		Schema.Alertes.findByIdAndDelete({_id: req.body.id}, function(err, data){
+			if(err){ reject(err);}
+			console.log("Deleted", data);
+			resolve(res.status(200).send(data));
 		});
 	});
 }
@@ -81,9 +108,11 @@ exports.create = function (req,res) {
 				if(err) {
 					console.log(err);
 					reject();
+				}else{
+					console.log("Saved : ", entry);
+					Mail.sendTo(admin, "Annonce Publiée", entry);
+					resolve(res.status(200).send(entry));
 				}
-				console.log("Saved : ", entry);
-				resolve(res.status(200).send(entry));
 			});
 		}
 	});
