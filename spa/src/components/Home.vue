@@ -1,8 +1,15 @@
 <template>
 	<div>
 		<h1> Rescue pets</h1>
-
+		<button>
+		<a href="http://localhost:8080/#/map">Carte</a>
+		</button>
 		<h1> Add annonce </h1>
+		<p v-if='errors.length'>
+			<ul>
+				<li class="errors" v-for="error in errors">{{ error }}</li>
+			</ul>
+		</p>
 		<p>
 			<label for="animal"> Type d'animal </label>
 			<select v-model="animal" name="animal">
@@ -38,7 +45,7 @@
 		</p>
 		<p>
 			<label for="adress"> Adresse </label>
-			<input type="text" name="adress" placeholder="3 rue Lafayette, Paris" v-model="adress">
+			<input type="text" name="adress" placeholder="3 rue La Fayette, Paris" v-model="adress">
 		</p>
 		<p>
 			<label for="creneau"> Heure de la perte </label>
@@ -54,9 +61,10 @@
 			<div class="annonce">
 				<p> Animal: {{alt.animal}} </p>
 				<p> Auteur: {{alt.author}} </p>
+				<p> Adresse: {{alt.adress}} </p>
 
-				<p> Status: {{alt.status}}
-					<select v-if="never" v-on:change="update(alt)" v-model="alt.status" name="status">
+				<p> Status:
+					<select v-on:change="update(alt)" v-model="alt.status" name="status">
 						<option>Signalé</option>
 						<option>Assignée</option>
 						<option>Sauvé</option>
@@ -88,21 +96,39 @@ export default {
 		return {
 			modif: false,
 			created: false,
-			animal:'',
-			author: '',
-			state: '',
-			necklace: '',
-			color: '',
-			adress: '',
-			creneau: '',
+			animal:null,
+			author: null,
+			state: null,
+			necklace: null,
+			color: null,
+			adress: null,
+			creneau: null,
 			alerte: [],
 			status: null,
-			brigade: null
+			brigade: null,
+			errors: [],
 		}
 	},
 	methods: {
+		checkForms(){
+			const specialCharacters = /[A-Za-z0-9'\.\-\s\,]/;
+			if (this.author) {
+				const rgx = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+				if (rgx.test(this.author)) {
+				}else {
+					this.errors.push("Invalid Email");
+					return false;
+				}
+			}else { this.errors.push("Email not filled"); return false;}
+
+			if (!this.color || !this.adress || !this.necklace || !this.animal || !this.creneau || !this.state) {
+				this.errors.push("Merci de remplir tous les champs"); return false;
+				return false;
+			}
+
+			return true;
+		},
 		remove(alt) {
-			console.log(this.alerte);
 			this.alerte.data.splice(this.alerte.data.indexOf(alt), 1);
 			axios
 			.post('http://localhost:4242/delete', {id: alt._id})
@@ -122,37 +148,56 @@ export default {
 			})
 		},
 		create(){
-			this.created = false;
-			let vm = this;
-			axios
-			.post('http://localhost:4242/create', {
-				animal: this.animal,
-				author: this.author,
-				state: this.state,
-				necklace: this.necklace,
-				color: this.color,
-				adress: this.adress,
-				creneau: this.creneau
-			})
-			.then(function(response){
-				if(response.data._id && response.data._id.length >0) {
-					vm.created = true;
-					setTimeout(function(){ vm.created = false }, 3000);
-				}
-			})
-		}
+			this.errors = [];
+			if (this.checkForms()) {
+				this.alerte.data.push({
+					animal: this.animal,
+					author: this.author,
+					state: this.state,
+					necklace: this.necklace,
+					color: this.color,
+					adress: this.adress,
+					creneau: this.creneau,
+					status: 'Signalé'
+				});
+				this.created = false;
+				let vm = this;
+				axios
+				.post('http://localhost:4242/create', {
+					animal: this.animal,
+					author: this.author,
+					state: this.state,
+					necklace: this.necklace,
+					color: this.color,
+					adress: this.adress,
+					creneau: this.creneau
+				})
+				.then(function(response){
+					if(response.data._id && response.data._id.length >0) {
+						vm.created = true;
+						setTimeout(function(){ vm.created = false }, 3000);
+					}
+				})
+			}
+		},
 	},
 	mounted () {
 		axios
 		.get('http://localhost:4242/home')
 		.then(response => (this.alerte = response))
+		console.log(response);
 	}
 
 }
 </script>
 
+
+
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+.errors {
+	color: red;
+}
 .container_annonce{
 	display: flex;
 	justify-content: space-around;

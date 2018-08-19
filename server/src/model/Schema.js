@@ -13,6 +13,7 @@ const signalementSchema = new Schema({
 	necklace: {type: Number},
 	status: {type: String, default: 'Signalé'} ,
 	brigade: {type: String, default: ''},
+	coord: {type: String, default: null}
 });
 
 const Alertes = mongoose.model('Alertes', signalementSchema);

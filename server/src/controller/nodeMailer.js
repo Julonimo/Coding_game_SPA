@@ -9,9 +9,6 @@ const transporter = nodemailer.createTransport({
 });
 
 exports.sendTo = function(destination, subject, content){
-	console.log("EMETTEUR",transporter);
-	console.log("DESTINAIRE", destination);
-	console.log("CONTENT", content);
 	let mailOptions = {
 	  from: 'pierre.letestor@gmail.com',
 	  to: destination,
